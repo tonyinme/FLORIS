@@ -81,6 +81,7 @@ class Turbine():
         self.yaw_angle = properties["yaw_angle"]
         self.tilt_angle = properties["tilt_angle"]
         self.tsr = properties["TSR"]
+        self.elevation = 0.0
 
         # these attributes need special attention
         self.rotor_radius = self.rotor_diameter / 2.0
@@ -164,10 +165,16 @@ class Turbine():
         fCtInterp = interp1d(windspeed, ct)
 
         def fCp(Ws):
-            return max(cp) if Ws < min(windspeed) else fCpInterp(Ws)
+            #print(Ws)
+            Cp = fCpInterp(np.min(Ws))
+            #return max(cp) if np.min(Ws) < min(windspeed) else
+            return Cp 
 
         def fCt(Ws):
-            return 0.99 if Ws < min(windspeed) else fCtInterp(Ws)
+            Ct = fCtInterp(np.min(Ws))
+            if Ct > 1.0:
+                Ct = 0.9999999999
+            return Ct
 
         return fCp, fCt
 
@@ -187,14 +194,12 @@ class Turbine():
         dist = [np.sqrt( (coord.x - x_grid)**2 + (coord.y+yPts[i] - y_grid)**2 + (self.hub_height+zPts[i] - z_grid)**2  ) for i in range(len(yPts))]
 
         idx = [np.where(dist[i]==np.min(dist[i])) for i in range(len(yPts))]
-        
         data = [u_at_turbine[idx[i]] for i in range(len(yPts))]
 
         return np.array(data)
 
     def _calculate_swept_area_velocities_visualization(self, grid_resolution, local_wind_speed, coord, x, y, z):
 
-        
         dx = (np.max(x) - np.min(x)) / grid_resolution.x
         dy = (np.max(y) - np.min(y)) / grid_resolution.y
         mask = \
@@ -249,7 +254,7 @@ class Turbine():
                                         rotated_y,
                                         rotated_z)
             self.velocities = self._calculate_swept_area_velocities_visualization(
-                                        flowfield.grid_resolution,
+                flowfield.grid_resolution,
                                         local_wind_speed,
                                         coord,
                                         rotated_x,
@@ -288,4 +293,5 @@ class Turbine():
         self.yaw_angle = np.radians(angle)
 
     def get_average_velocity(self):
+        #print(self.velocities)
         return np.mean(self.velocities)

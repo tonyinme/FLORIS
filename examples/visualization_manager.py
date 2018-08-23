@@ -46,7 +46,7 @@ class VisualizationManager():
         plt.tick_params(which='both', labelsize=15)
 
     def _new_figure(self):
-        plt.figure(self.figure_count)
+        plt.figure(self.figure_count,figsize=(15,7))
         self.figure_count += 1
 
     def _new_filled_contour(self, mesh1, mesh2, data):
@@ -83,6 +83,8 @@ class VisualizationManager():
 
     def _set_domain_bounds(self):
         coords = self.flowfield.turbine_map.coords
+        turbines = self.flowfield.turbine_map.turbines
+        heights = [turbine.elevation for turbine in turbines]
         x = [coord.x for coord in coords]
         y = [coord.y for coord in coords]
         eps = 0.1
@@ -91,7 +93,7 @@ class VisualizationManager():
         ymin = min(y) - 2 * self.flowfield.max_diameter
         ymax = max(y) + 2 * self.flowfield.max_diameter
         zmin = 0 + eps 
-        zmax = 2 * self.flowfield.hub_height
+        zmax = 2 * np.max(heights)
         return xmin, xmax, ymin, ymax, zmin, zmax
 
     def _add_turbine_marker(self, turbine, coords, wind_direction):

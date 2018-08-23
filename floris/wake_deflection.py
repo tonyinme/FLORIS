@@ -132,4 +132,6 @@ class WakeDeflection():
 
         deflection = delta_near_wake + delta_far_wake
 
+        #deflection = np.zeros(np.shape(x_locations))
+
         return deflection

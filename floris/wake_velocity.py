@@ -179,6 +179,7 @@ class WakeVelocity():
         # turbine parameters
         D           = turbine.rotor_diameter
         HH          = turbine.hub_height
+        elev        = turbine.elevation
         yaw         = -turbine.yaw_angle         # opposite sign convention in this model
         tilt        = turbine.tilt_angle
         Ct          = turbine.Ct
@@ -190,6 +191,8 @@ class WakeVelocity():
         # initial velocity deficits
         uR      = U_local*Ct*np.cos(tilt)*np.cos(yaw)/(2.*(1-np.sqrt(1-(Ct*np.cos(tilt)*np.cos(yaw)))))
         u0      = U_local*np.sqrt(1-Ct)
+
+        #print(Ct)
         
         # initial Gaussian wake expansion
         sigma_z0    = D*0.5*np.sqrt( uR/(U_local + u0) )
@@ -218,10 +221,12 @@ class WakeVelocity():
         sigma_y[x_locations < xR] = 0.5*D
         sigma_z[x_locations < xR] = 0.5*D
 
+        #print(np.count_nonzero(np.isnan(u0)))
+
         a = (np.cos(veer)**2)/(2*sigma_y**2) + (np.sin(veer)**2)/(2*sigma_z**2)
         b = -(np.sin(2*veer))/(4*sigma_y**2) + (np.sin(2*veer))/(4*sigma_z**2)
         c = (np.sin(veer)**2)/(2*sigma_y**2) + (np.cos(veer)**2)/(2*sigma_z**2)
-        totGauss = np.exp( -( a*((y_locations-turbine_coord.y)-delta)**2 - 2*b*((y_locations-turbine_coord.y)-delta)*((z_locations-HH)) + c*((z_locations-HH))**2 ) )
+        totGauss = np.exp( -( a*((y_locations-turbine_coord.y)-delta)**2 - 2*b*((y_locations-turbine_coord.y)-delta)*((z_locations-(HH+elev))) + c*((z_locations-(HH+elev)))**2 ) )
 
         velDef = (U_local*(1-np.sqrt(1-((Ct*np.cos(yaw))/(8.0*sigma_y*sigma_z/D**2)) ) )*totGauss)
         velDef[x_locations < xR] = 0     
@@ -238,7 +243,7 @@ class WakeVelocity():
         a = (np.cos(veer)**2)/(2*sigma_y**2) + (np.sin(veer)**2)/(2*sigma_z**2)
         b = -(np.sin(2*veer))/(4*sigma_y**2) + (np.sin(2*veer))/(4*sigma_z**2)
         c = (np.sin(veer)**2)/(2*sigma_y**2) + (np.cos(veer)**2)/(2*sigma_z**2)
-        totGauss = np.exp( -( a*((y_locations-turbine_coord.y)-delta)**2 - 2*b*((y_locations-turbine_coord.y)-delta)*((z_locations-HH)) + c*((z_locations-HH))**2 ) )
+        totGauss = np.exp( -( a*((y_locations-turbine_coord.y)-delta)**2 - 2*b*((y_locations-turbine_coord.y)-delta)*((z_locations-(HH+elev))) + c*((z_locations-(HH+elev)))**2 ) )
         
         # compute velocities in the far wake
         velDef1 = (U_local*(1-np.sqrt(1-((Ct*np.cos(yaw))/(8.0*sigma_y*sigma_z/D**2)) ) )*totGauss)
