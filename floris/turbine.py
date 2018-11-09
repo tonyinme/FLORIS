@@ -54,7 +54,7 @@ class Turbine():
         self: Turbine - an instantiated Turbine object
     """
 
-    def __init__(self, instance_dictionary):
+    def __init__(self, instance_dictionary, fixed_pp):
 
         super().__init__()
 
@@ -94,6 +94,9 @@ class Turbine():
         self.velocities = [-1] * self.grid_point_count
         self.turbulence_intensity = -1
         self.plotting = False
+
+        # Whether or not to use fixed pp
+        self.fixed_pp = fixed_pp
 
         # calculated attributes are
         # self.Ct         # Thrust Coefficient
@@ -144,8 +147,27 @@ class Turbine():
         return self.fCt(self.get_average_velocity())
 
     def _calculate_power(self):
+        
+        if self.fixed_pp:
+            pP_temp = self.pP
+        else:
+
+            # Compute pP_temp
+            no_pP = 0.05
+            rated_wind_speed = 11.5
+            yaw_for_free_wind_speed = 13.5
+            m = (self.pP - no_pP) / (rated_wind_speed - yaw_for_free_wind_speed)
+            b = no_pP - m * yaw_for_free_wind_speed
+            
+            if self.get_average_velocity() < rated_wind_speed:
+                pP_temp = self.pP
+            elif self.get_average_velocity() < yaw_for_free_wind_speed:
+                pP_temp = m * self.get_average_velocity() + b
+            else:
+                pP_temp = no_pP
+
         cptmp = self.Cp \
-                * np.cos(self.yaw_angle)**self.pP \
+                * np.cos(self.yaw_angle)**pP_temp \
                 * np.cos(self.tilt_angle)**self.pT
         return 0.5 * self.air_density * (np.pi * self.rotor_radius**2) \
                 * cptmp * self.generator_efficiency \

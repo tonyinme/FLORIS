@@ -159,7 +159,7 @@ class InputReader():
         except ValueError:
             return None, ValueError
 
-    def _build_turbine(self, json_dict):
+    def _build_turbine(self, json_dict, fixed_pp):
         """
         Instantiates a Turbine object from a given input file
         
@@ -170,7 +170,7 @@ class InputReader():
             turbine: Turbine - instantiated Turbine object
         """
         propertyDict = self._validateJSON(json_dict, self._turbine_properties)
-        return Turbine(propertyDict)
+        return Turbine(propertyDict, fixed_pp)
 
     def _build_wake(self, json_dict):
         """
@@ -202,7 +202,7 @@ class InputReader():
         propertyDict = self._validateJSON(json_dict, self._farm_properties)
         return Farm(propertyDict, turbine, wake)
 
-    def read(self, input_file):
+    def read(self, input_file, fixed_pp):
         """
         Parses main input file
 
@@ -214,7 +214,7 @@ class InputReader():
         """
         json_dict = self._parseJSON(input_file)
 
-        turbine = self._build_turbine(json_dict["turbine"])
+        turbine = self._build_turbine(json_dict["turbine"], fixed_pp)
         wake = self._build_wake(json_dict["wake"])
         farm = self._build_farm(json_dict["farm"], turbine, wake)
         return farm

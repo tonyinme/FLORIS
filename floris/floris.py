@@ -24,11 +24,11 @@ class Floris():
         self: Floris - an instantiated Floris object
     """
 
-    def __init__(self, input_file):
-
+    def __init__(self, input_file, fixed_pp):
         self.input_reader = InputReader()
         self.input_file = input_file
+        self.fixed_pp = fixed_pp
         self.farm = self._process_input()
 
     def _process_input(self):
-        return self.input_reader.read(self.input_file)
+        return self.input_reader.read(self.input_file, self.fixed_pp)
