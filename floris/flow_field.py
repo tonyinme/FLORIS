@@ -66,9 +66,14 @@ class FlowField():
         self.max_diameter = max(
             [turbine.rotor_diameter for turbine in self.turbine_map.turbines])
         self.hub_height = self.turbine_map.turbines[0].hub_height
-        self.x, self.y, self.z = self._discretize_turbine_domain()
+        # self.x, self.y, self.z = self._discretize_turbine_domain()
         self.initial_flowfield = self._initial_flowfield()
         self.u_field = self._initial_flowfield()
+
+        self.xmin, self.xmax, self.ymin, self.ymax, self.zmin, self.zmax = self._set_domain_bounds()
+        self.x, self.dx = np.linspace(0, 5000, 2000, retstep=True)
+        self.y, self.dy = np.linspace(0, 1200, 1000, retstep=True)
+        self.z, self.dz = np.linspace(0, 200,  100, retstep=True)
 
     def _discretize_turbine_domain(self):
         """
@@ -127,6 +132,19 @@ class FlowField():
         # compute wake overlap based on the number of points that are not freestream velocity, i.e. affected by the wake
         count = np.sum(freestream_velocities - wake_velocities <= 0.05)
         return (turbine.grid_point_count - count) / turbine.grid_point_count
+
+    def _set_domain_bounds(self):
+        coords = self.turbine_map.coords
+        x = [coord.x for coord in coords]
+        y = [coord.y for coord in coords]
+        eps = 0.1
+        xmin = min(x) - 5 * self.flowfield.max_diameter
+        xmax = max(x) + 10 * self.flowfield.max_diameter
+        ymin = min(y) - 5 * self.flowfield.max_diameter
+        ymax = max(y) + 5 * self.flowfield.max_diameter
+        zmin = 0 + eps
+        zmax = 2 * self.flowfield.hub_height
+        return xmin, xmax, ymin, ymax, zmin, zmax
 
     # Public methods
 
@@ -213,8 +231,8 @@ class FlowField():
         #                                         self.turbulence_intensity,
         #                                         self.wake.velocity_model, coord_ti, coord, turbine)
 
-            # combine this turbine's wake into the full wake field
-            u_wake = self.wake_combination.combine(u_wake, turb_wake)
+        #    # combine this turbine's wake into the full wake field
+        #    # u_wake = self.wake_combination.combine(u_wake, turb_wake)
 
-        # apply the velocity deficit field to the freestream
-        self.u_field = self.initial_flowfield - u_wake
+        # # apply the velocity deficit field to the freestream
+        # self.u_field = self.initial_flowfield - u_wake
