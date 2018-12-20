@@ -169,7 +169,8 @@ class FlowField():
         # sort the turbine map
         sorted_map = rotated_map.sorted_in_x_as_list()
 
-
+        # Solve the wind farm
+        self.solve()
 
         # # calculate the velocity deficit and wake deflection on the mesh
         # u_wake = np.zeros(self.u_field.shape)
@@ -236,3 +237,100 @@ class FlowField():
 
         # # apply the velocity deficit field to the freestream
         # self.u_field = self.initial_flowfield - u_wake
+
+    def solve(self):
+        '''
+        Numerical solution
+        '''
+        import time
+
+        # Compute time
+        start = time.time()
+        print("Starting solver")
+
+        # Compute the wakes by looping through every x
+        xi = self.x[0]
+
+        # Point to uw - This is the field for the perturbation streamwise
+        # velocity Uh
+        uw = self.uw
+
+        # Loop over all distances downstream
+        for i, xi1 in enumerate(self.x[1:]):
+            
+            # Compute the change in x
+            dx = xi1 - xi
+
+            # Write the advecting velocities
+            U = self.U 
+            V = self.V
+            W = self.W
+
+            '''
+            First compute the velocity gradients
+            '''
+            # Compute the derivatives in the plane (y and z)
+            duwdy = (np.gradient(self.uw[-1], self.dy, edge_order=2, axis=1)) 
+            duwdz = (np.gradient(self.uw[-1], self.dz, edge_order=2, axis=0))
+            #~ duwdy = (np.gradient(self.U + self.uw[-1], self.dy, edge_order=2, axis=1)) 
+            #~ duwdz = (np.gradient(self.U + self.uw[-1], self.dz, edge_order=2, axis=0))
+
+            '''
+            Now solve the marching problem for u'
+            '''
+            # Discrete equation
+            # Notice laplacian term - this is a stabilizing term
+            uwi = (
+                    # Term from previous x location
+                    self.uw[-1]
+                    +
+                    # Coefficient from discretization 
+                    #~ dx / (U) * 
+                    dx / (U + self.uw[-1]) * 
+                        # V and W advection
+                        ( - V * duwdy - W * duwdz
+                        +
+                        # Viscous term
+                        #~ self.nu * self.laplacian(self.U + self.uw[-1], self.dy, self.dz)
+                        self.nu * self.laplacian(self.uw[-1], self.dy, self.dz)
+                        )
+                    )
+
+            # Add the new added wake
+            for j, n in enumerate(self.activate):
+                if n == i: 
+                    print('Activating turbine', str(j))
+                    t = self.turbines[j]
+                    uwi += t.initial_condition(self.Y - t.location[1], self.Z, U + uwi)
+                    t.add_curl(self.Y - t.location[1], self.Z - t.location[2], V, W)
+
+            # Adjust the boundary conditions to be zero at the edges
+            uwi[ :,  0] *= 0
+            uwi[ :, -1] *= 0
+            uwi[ 0,  :] *= 0
+            uwi[-1,  :] *= 0
+
+            #~ print(np.shape(uwi))
+            # Add the new time
+            self.uw.append(uwi)
+
+            # Store the previous xi
+            xi = xi1
+
+        print("Solver finished")
+
+        # Compute the time of the solver by subtracting and and start time
+        end = time.time()
+        print("Solver running time=", end - start, 's')
+
+    @staticmethod
+    def laplacian(u, dy, dz):
+        '''
+        Compute the laplacian in 2D
+        '''
+        d2udy2 = np.gradient(np.gradient(u, dy, axis=1), dy, axis=1)
+        #~ dy = np.gradient(y,axis=1)**2
+        d2udz2 = np.gradient(np.gradient(u, dz, axis=0), dz, axis=0)
+        #~ dz = np.gradient(z,axis=0)**2
+    
+        return d2udy2 + d2udz2
