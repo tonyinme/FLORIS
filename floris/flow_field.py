@@ -151,65 +151,67 @@ class FlowField():
         # sort the turbine map
         sorted_map = rotated_map.sorted_in_x_as_list()
 
-        # calculate the velocity deficit and wake deflection on the mesh
-        u_wake = np.zeros(self.u_field.shape)
-        for coord, turbine in sorted_map:
 
-            # update the turbine based on the velocity at its hub
-            turbine.update_quantities(u_wake, coord, self, rotated_x, rotated_y, rotated_z)
+
+        # # calculate the velocity deficit and wake deflection on the mesh
+        # u_wake = np.zeros(self.u_field.shape)
+        # for coord, turbine in sorted_map:
+
+        #     # update the turbine based on the velocity at its hub
+        #     turbine.update_quantities(u_wake, coord, self, rotated_x, rotated_y, rotated_z)
             
-            # get the wake deflecton field
-            deflection = self._compute_turbine_wake_deflection(rotated_x, rotated_y, turbine, coord, self)
+        #     # get the wake deflecton field
+        #     deflection = self._compute_turbine_wake_deflection(rotated_x, rotated_y, turbine, coord, self)
 
-            # get the velocity deficit accounting for the deflection
-            turb_wake = self._compute_turbine_velocity_deficit(
-                rotated_x, rotated_y, rotated_z, turbine, coord, deflection, self.wake, self)
+        #     # get the velocity deficit accounting for the deflection
+        #     turb_wake = self._compute_turbine_velocity_deficit(
+        #         rotated_x, rotated_y, rotated_z, turbine, coord, deflection, self.wake, self)
 
-            if self.wake.velocity_model.type_string == 'gauss':
+        #     if self.wake.velocity_model.type_string == 'gauss':
 
-                # compute area overlap of wake on other turbines and update downstream turbine turbulence intensities
-                for coord_ti, turbine_ti in sorted_map:
+        #         # compute area overlap of wake on other turbines and update downstream turbine turbulence intensities
+        #         for coord_ti, turbine_ti in sorted_map:
 
-                    if coord_ti.x > coord.x and np.abs(coord.y - coord_ti.y) < 2*turbine.rotor_diameter:
-                        # only assess the effects of the current wake
+        #             if coord_ti.x > coord.x and np.abs(coord.y - coord_ti.y) < 2*turbine.rotor_diameter:
+        #                 # only assess the effects of the current wake
 
-                        if turbine_ti.plotting:
-                            wake_velocities = turbine_ti._calculate_swept_area_velocities_visualization(
-                                self.grid_resolution,
-                                self.initial_flowfield - turb_wake,
-                                coord_ti,
-                                rotated_x,
-                                rotated_y,
-                                rotated_z)
-                            freestream_velocities = turbine_ti._calculate_swept_area_velocities_visualization(
-                                self.grid_resolution,
-                                self.initial_flowfield,
-                                coord_ti,
-                                rotated_x,
-                                rotated_y,
-                                rotated_z)
+        #                 if turbine_ti.plotting:
+        #                     wake_velocities = turbine_ti._calculate_swept_area_velocities_visualization(
+        #                         self.grid_resolution,
+        #                         self.initial_flowfield - turb_wake,
+        #                         coord_ti,
+        #                         rotated_x,
+        #                         rotated_y,
+        #                         rotated_z)
+        #                     freestream_velocities = turbine_ti._calculate_swept_area_velocities_visualization(
+        #                         self.grid_resolution,
+        #                         self.initial_flowfield,
+        #                         coord_ti,
+        #                         rotated_x,
+        #                         rotated_y,
+        #                         rotated_z)
 
-                        else:
-                            wake_velocities = turbine_ti._calculate_swept_area_velocities(
-                                self.wind_direction,
-                                self.initial_flowfield - turb_wake,
-                                coord_ti,
-                                rotated_x,
-                                rotated_y,
-                                rotated_z)
-                            freestream_velocities = turbine_ti._calculate_swept_area_velocities(
-                                self.wind_direction,
-                                self.initial_flowfield,
-                                coord_ti,
-                                rotated_x,
-                                rotated_y,
-                                rotated_z)
+        #                 else:
+        #                     wake_velocities = turbine_ti._calculate_swept_area_velocities(
+        #                         self.wind_direction,
+        #                         self.initial_flowfield - turb_wake,
+        #                         coord_ti,
+        #                         rotated_x,
+        #                         rotated_y,
+        #                         rotated_z)
+        #                     freestream_velocities = turbine_ti._calculate_swept_area_velocities(
+        #                         self.wind_direction,
+        #                         self.initial_flowfield,
+        #                         coord_ti,
+        #                         rotated_x,
+        #                         rotated_y,
+        #                         rotated_z)
 
-                        area_overlap = self._calculate_area_overlap(wake_velocities, freestream_velocities, turbine)
-                        if area_overlap > 0.0:
-                            turbine_ti.turbulence_intensity = turbine_ti.calculate_turbulence_intensity(
-                                                self.turbulence_intensity,
-                                                self.wake.velocity_model, coord_ti, coord, turbine)
+        #                 area_overlap = self._calculate_area_overlap(wake_velocities, freestream_velocities, turbine)
+        #                 if area_overlap > 0.0:
+        #                     turbine_ti.turbulence_intensity = turbine_ti.calculate_turbulence_intensity(
+        #                                         self.turbulence_intensity,
+        #                                         self.wake.velocity_model, coord_ti, coord, turbine)
 
             # combine this turbine's wake into the full wake field
             u_wake = self.wake_combination.combine(u_wake, turb_wake)
